@@ -1,0 +1,15 @@
+version: "3"
+services:
+  react-app:
+    image: react-app
+    stdin_open: true
+    ports: 
+      - "3000:3000"
+  api-server:
+    image: api-server
+    ports:
+      - "5000:5000"
+    environment: 
+      Trello_Key: ''
+      Trello_Token: ''
+      Trello_Board_ID: ''
