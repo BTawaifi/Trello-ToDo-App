@@ -104,7 +104,7 @@ else {
                     concater = []
                 }
 
-                client.SETEX(req.route.path, 2, JSON.stringify(lists));
+                client.SETEX(req.route.path, 10, JSON.stringify(lists));
 
                 res.json(lists)
             })
@@ -117,6 +117,23 @@ else {
         if (req.body.name !== '')
             axios.post(`https://api.trello.com/1/cards?idList=${req.body.listid}&name=${req.body.name}&key=${process.env.Trello_Key}&token=${process.env.Trello_Token}`)
                 .then((response) => {
+                   // console.log('AA')
+                    //converts the chosenList cards into an array, adds the new card
+                    client.GET("/boardcontents",(err, value)=>{
+                        //console.log('Ab'+ JSON.parse(value))
+                        const chosenList=0;
+                        let myBoard=JSON.parse(value);
+                        const entries = Object.values(myBoard[chosenList].cards); //array
+                        const newCardObject = { "id": response.data.id, "name": req.body.name, "idList": myBoard[chosenList].id }
+                        entries.push(newCardObject)
+    
+                        //converts the array back into an object and replace chosenList cards with the new entries
+                        myBoard[chosenList].cards = { ...entries }
+                       // console.log('doing stuff')
+                       // console.log(myBoard)
+                        client.SETEX('/boardcontents', 10, JSON.stringify(myBoard));
+                    });
+
                     res.json(response.data.id)
                 })
                 .catch(err => res.send(err.errno));
@@ -130,6 +147,36 @@ else {
     app.put('/cards::id', async (req, res) => {
         axios.put(`https://api.trello.com/1/cards/${req.params.id}?idList=${req.body.idList}&key=${process.env.Trello_Key}&token=${process.env.Trello_Token}`)
             .then((response) => {
+
+                client.GET("/boardcontents",(err, value)=>{
+                const from = 0
+                const to = 1
+                    console.log(JSON.parse(value))
+                let myBoard = JSON.parse(value)
+                const FromList = Object.values(myBoard[from].cards); //array
+                const ToList = Object.values(myBoard[to].cards); //array
+        
+                //remove objects from FromList adds it to ToList
+                let filteredEntries=[];
+                let targetObject;
+                FromList.forEach(item=>{
+                  //returns the FromList cards without the uneeded one (set the uneeded as target)
+                  if(item.id!==e.target.value)
+                  filteredEntries.push(item)
+                  else
+                  targetObject=item
+                })
+                ToList.push(targetObject)
+        
+                //convert from array into object and insert back
+                myBoard[from].cards = { ...filteredEntries }
+                myBoard[to].cards = { ...ToList }
+                console.log(JSON.parse(myBoard))
+                client.SETEX('/boardcontents', 10, JSON.stringify(myBoard));
+            })
+
+
+
                 res.json(response.data)
             })
             .catch(err => res.send(err.errno));

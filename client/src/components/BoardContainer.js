@@ -24,7 +24,7 @@ const BoardContainer = ({ serverURL }) => {
 
   React.useEffect(() => {
 
-    const interval = setInterval(() => getBoard(), 2000);
+    //const interval = setInterval(() => getBoard(), 2000);
 
 
     //fetch board from backend
@@ -37,7 +37,7 @@ const BoardContainer = ({ serverURL }) => {
 
 
       return () => {
-        clearInterval(interval);
+        //clearInterval(interval);
       }
   }, [Board]);
 
