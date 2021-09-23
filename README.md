@@ -6,7 +6,7 @@
 
 ### In case you don't have the required enviromental variables
 
-``` bash
+```bash
 # Navigate To
 https://trello.com/app-key
 
@@ -29,7 +29,7 @@ Trello_Token= {your generated token}
 
 ### Redis Setup (If you want your requests to be cached)
 
-NOTE: redis require custom configuration beside the basic config
+NOTE: redis require custom configuration beside the basic default config
 
 #### On windows download and install
 
@@ -37,9 +37,15 @@ NOTE: redis require custom configuration beside the basic config
 https://github.com/tporadowski/redis/releases
 ```
 
+#### For Docker run the following
+
+```bash
+docker run -d --name redis -p 6379:6379 redis
+```
+
 ### Npm Setup
 
-``` bash
+```bash
 # Change directory to server directory
 cd server
 
@@ -71,10 +77,9 @@ REACT_APP_Server_URL="http://localhost:5000"
 
 ```
 
-
 ### Docker Setup
 
-``` bash
+```bash
 # Edit docker-compose.yml with your own enviromental variables
 Trello_Key= {your app key}
 Trello_Token= {your generated token}
@@ -94,4 +99,3 @@ docker-compose down
 
 # Server runs locally on http://localhost:5000 and client on http://localhost:3000
 ```
-
