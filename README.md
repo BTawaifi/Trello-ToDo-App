@@ -27,6 +27,16 @@ Trello_Token= {your generated token}
 # Continue by restarting the server and running the client
 ```
 
+### Redis Setup (If you want your requests to be cached)
+
+NOTE: redis require custom configuration beside the basic config
+
+#### On windows download and install
+
+```bash
+https://github.com/tporadowski/redis/releases
+```
+
 ### Npm Setup
 
 ``` bash

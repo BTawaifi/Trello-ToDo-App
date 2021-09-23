@@ -3,7 +3,10 @@ const axios = require('axios').default
 const helmet = require('helmet')
 const compression = require('compression')
 const cors = require('cors');
+const redis = require('redis');
+
 const PORT = process.env.PORT || 5000;
+const REDIS_PORT = process.env.REDIS_PORT || 6379;
 require('dotenv').config()
 
 //edit .env file for preconfigured key, token and board id (or add them to webhost app)
@@ -26,6 +29,27 @@ if (cluster.isMaster) {
     })
 }
 else {
+
+    client = redis.createClient(REDIS_PORT);
+
+    // Cache middleware
+    function cache(req, res, next) {
+      try {
+        const key = req.route.path;
+        client.get(key, (err, value) => {
+          if (err) throw err;
+          if (value !== null) {
+            res.send(JSON.parse(value));
+          } else {
+            next();
+          }
+        });
+      } catch (err) {
+        console.log(err.errno);
+        next();
+      }
+    }
+
     //Modify Cors to allow or disallow Cross-origin resource sharing (whitelist the frontend)
     //Default allow requests from all origins
     const app = express();
@@ -44,7 +68,7 @@ else {
     })
 
     //Gets Lists and their cards within the board, concatinates them into one JSON response
-    app.get('/boardcontents', (req, res) => {
+    app.get('/boardcontents', cache, (req, res) => {
         axios.get(`https://api.trello.com/1/boards/${process.env.Trello_Board_ID}/lists?fields=name&key=${process.env.Trello_Key}&token=${process.env.Trello_Token}`)
             .then(async request => {
                 let cardsArray = [];
@@ -72,6 +96,9 @@ else {
                     lists[i].cards = { ...concater }
                     concater = []
                 }
+
+                client.SETEX(req.route.path, 30, JSON.stringify(lists));
+
                 res.json(lists)
             })
             .catch(err => res.send(err.errno));
