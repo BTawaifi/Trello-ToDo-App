@@ -24,7 +24,8 @@ const BoardContainer = ({ serverURL }) => {
 
   React.useEffect(() => {
 
-    //const interval = setInterval(() => getBoard(), 2000);
+    //refresh the data every set time
+    const interval = setInterval(() => getBoard(), 2000); //change the refresh rate here
 
 
     //fetch board from backend
@@ -36,9 +37,9 @@ const BoardContainer = ({ serverURL }) => {
       setBoard(Board)
 
 
-      return () => {
-        //clearInterval(interval);
-      }
+    return () => {
+      clearInterval(interval);
+    }
   }, [Board]);
 
 
@@ -49,7 +50,10 @@ const BoardContainer = ({ serverURL }) => {
     axios
       .get(`${serverURL}/boardcontents`)
       .then((response) => {
+        setredraw(true);
         setBoard(response.data);
+        setredraw(false);
+
       })
       .catch((err) => {
         //can be modified to change reconnection behavior
@@ -66,19 +70,8 @@ const BoardContainer = ({ serverURL }) => {
       name: inputValue
     })
       .then((response) => {
-        /*
-        //converts the chosenList cards into an array, adds the new card
-        let myBoard = Board
-        const entries = Object.values(myBoard[chosenList].cards); //array
-        const newCardObject = { "id": response.data, "name": inputValue, "idList": myBoard[chosenList].id }
-        entries.push(newCardObject)
-
-        //converts the array back into an object and replace chosenList cards with the new entries
-        myBoard[chosenList].cards = { ...entries }
-        setBoard(myBoard)
-        */
-       setLoading(false)
-       setinputValue('')
+        setLoading(false)
+        setinputValue('')
         getBoard();
       })
       .catch((err) => {
@@ -91,33 +84,6 @@ const BoardContainer = ({ serverURL }) => {
   const moveCard = (e, from, to) => {
     axios.put(`${serverURL}/cards:${e.target.value}`, { idList: Board[to].id })
       .then(() => {
-        /*
-        //converts the FromList and ToList cards into an array
-        let myBoard = Board
-        const FromList = Object.values(myBoard[from].cards); //array
-        const ToList = Object.values(myBoard[to].cards); //array
-
-        //remove objects from FromList adds it to ToList
-        let filteredEntries=[];
-        let targetObject;
-        FromList.forEach(item=>{
-          //returns the FromList cards without the uneeded one (set the uneeded as target)
-          if(item.id!==e.target.value)
-          filteredEntries.push(item)
-          else
-          targetObject=item
-        })
-        ToList.push(targetObject)
-
-        //convert from array into object and insert back
-        myBoard[from].cards = { ...filteredEntries }
-        myBoard[to].cards = { ...ToList }
-
-        //trigger a redraw and set the new board state
-        setredraw(true);
-        setBoard(myBoard)
-        setredraw(false);
-        */
         getBoard();
       })
       .then(() => { setBoard(Board) })
@@ -132,13 +98,6 @@ const BoardContainer = ({ serverURL }) => {
     axios
       .post(`${serverURL}/cards/archiveList`, { listid: id })
       .then(() => {
-        //clears the cards within the chosen list
-        /*let myBoard = Board
-        myBoard[listNum].cards = {}
-        setredraw(true);
-        setBoard(myBoard)
-        setredraw(false);
-        */
         getBoard();
       })
       .then(() => { setBoard(Board) })
