@@ -104,7 +104,7 @@ else {
                     concater = []
                 }
 
-                client.SETEX(req.route.path, 30, JSON.stringify(lists));
+                client.SETEX(req.route.path, 2, JSON.stringify(lists));
 
                 res.json(lists)
             })

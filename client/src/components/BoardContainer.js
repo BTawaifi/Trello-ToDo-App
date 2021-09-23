@@ -23,6 +23,10 @@ const BoardContainer = ({ serverURL }) => {
   const [redraw, setredraw] = React.useState(false);
 
   React.useEffect(() => {
+
+    const interval = setInterval(() => getBoard(), 2000);
+
+
     //fetch board from backend
     if (!boardLoaded)
       getBoard();
@@ -30,6 +34,11 @@ const BoardContainer = ({ serverURL }) => {
     //redraw board on frontend
     else
       setBoard(Board)
+
+
+      return () => {
+        clearInterval(interval);
+      }
   }, [Board]);
 
 
@@ -67,9 +76,9 @@ const BoardContainer = ({ serverURL }) => {
         //converts the array back into an object and replace chosenList cards with the new entries
         myBoard[chosenList].cards = { ...entries }
         setBoard(myBoard)
-        setLoading(false)
-        setinputValue('')
         */
+       setLoading(false)
+       setinputValue('')
         getBoard();
       })
       .catch((err) => {
