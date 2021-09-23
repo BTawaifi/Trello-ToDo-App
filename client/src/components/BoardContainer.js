@@ -8,7 +8,7 @@ const BoardContainer = ({ serverURL }) => {
   const [Board, setBoard] = React.useState(null);
 
   //handles fetching the board
-  const [boardLoaded,setboardLoaded] = React.useState(false);
+  const [boardLoaded, setboardLoaded] = React.useState(false);
 
   //handles the button text for adding a new card
   const [isLoading, setLoading] = React.useState(false);
@@ -24,62 +24,65 @@ const BoardContainer = ({ serverURL }) => {
 
   React.useEffect(() => {
     //fetch board from backend
-    if(!boardLoaded)
-    getBoard();
+    if (!boardLoaded)
+      getBoard();
 
     //redraw board on frontend
     else
-    setBoard(Board)
+      setBoard(Board)
   }, [Board]);
 
 
-    //fetches all the board lists and the cards within them as one JSON
-    const getBoard = () => {
-      setboardLoaded(true);
-      console.log(`${serverURL}/boardcontents`)
-      axios
-        .get(`${serverURL}/boardcontents`)
-        .then((response) => {
-          setBoard(response.data);
-        })
-        .catch((err) => {
-          //can be modified to change reconnection behavior
-          seterror(true)
-          setboardLoaded(false);
-          console.log(err);
-        });
-    }
+  //fetches all the board lists and the cards within them as one JSON
+  const getBoard = () => {
+    setboardLoaded(true);
+    console.log(`${serverURL}/boardcontents`)
+    axios
+      .get(`${serverURL}/boardcontents`)
+      .then((response) => {
+        setBoard(response.data);
+      })
+      .catch((err) => {
+        //can be modified to change reconnection behavior
+        seterror(true)
+        setboardLoaded(false);
+        console.log(err);
+      });
+  }
 
   const addCard = (chosenList) => {
-      setLoading(true)
-      axios.post(`${serverURL}/cards/new`, {
-          listid: Board[chosenList].id,
-          name: inputValue
-        })
-        .then((response) => {
-          
-          //converts the chosenList cards into an array, adds the new card
-          let myBoard = Board
-          const entries = Object.values(myBoard[chosenList].cards); //array
-          const newCardObject = { "id": response.data, "name": inputValue, "idList": myBoard[chosenList].id }
-          entries.push(newCardObject)
+    setLoading(true)
+    axios.post(`${serverURL}/cards/new`, {
+      listid: Board[chosenList].id,
+      name: inputValue
+    })
+      .then((response) => {
+        /*
+        //converts the chosenList cards into an array, adds the new card
+        let myBoard = Board
+        const entries = Object.values(myBoard[chosenList].cards); //array
+        const newCardObject = { "id": response.data, "name": inputValue, "idList": myBoard[chosenList].id }
+        entries.push(newCardObject)
 
-          //converts the array back into an object and replace chosenList cards with the new entries
-          myBoard[chosenList].cards = { ...entries }
-          setBoard(myBoard)
-          setLoading(false)
-          setinputValue('')
-        })
-        .catch((err) => {
-          setLoading(false)
-          seterror(true)
-        })
+        //converts the array back into an object and replace chosenList cards with the new entries
+        myBoard[chosenList].cards = { ...entries }
+        setBoard(myBoard)
+        setLoading(false)
+        setinputValue('')
+        */
+        getBoard();
+      })
+      .catch((err) => {
+        setLoading(false)
+        seterror(true)
+      })
   }
 
   //handles moving from one list to another called by a child component
-  const moveCard = (e,from,to) => {
-     axios.put(`${serverURL}/cards:${e.target.value}`, { idList: Board[to].id })
+  const moveCard = (e, from, to) => {
+    axios.put(`${serverURL}/cards:${e.target.value}`, { idList: Board[to].id })
       .then(() => {
+        /*
         //converts the FromList and ToList cards into an array
         let myBoard = Board
         const FromList = Object.values(myBoard[from].cards); //array
@@ -105,32 +108,35 @@ const BoardContainer = ({ serverURL }) => {
         setredraw(true);
         setBoard(myBoard)
         setredraw(false);
+        */
+        getBoard();
       })
-      .then(()=>{ setBoard(Board)})
+      .then(() => { setBoard(Board) })
       .catch((err) => {
         seterror(true)
         console.log(err);
-      }); 
+      });
   }
 
 
-  const deleteListContent = (id,listNum) => {
-     axios
-      .post(`${serverURL}/cards/archiveList`,{listid: id})
+  const deleteListContent = (id, listNum) => {
+    axios
+      .post(`${serverURL}/cards/archiveList`, { listid: id })
       .then(() => {
         //clears the cards within the chosen list
-        let myBoard = Board
+        /*let myBoard = Board
         myBoard[listNum].cards = {}
-
         setredraw(true);
         setBoard(myBoard)
         setredraw(false);
+        */
+        getBoard();
       })
-      .then(()=>{ setBoard(Board)})
+      .then(() => { setBoard(Board) })
       .catch((err) => {
         seterror(true)
         console.log(err);
-      }); 
+      });
   }
 
   //add card text change
@@ -145,12 +151,11 @@ const BoardContainer = ({ serverURL }) => {
   }
 
   //Checks if we have our data or not and throws error messages, also displays a spinner for loading
-  if (!Board || Board.length === 0 || !Array.isArray(Board))
-  { //timeout for fetching data (connection error)
-     setTimeout(function(){seterror(true)}, 20000);
+  if (!Board || Board.length === 0 || !Array.isArray(Board)) { //timeout for fetching data (connection error)
+    setTimeout(function () { seterror(true) }, 20000);
     return (
       <div>
-        {error === true ? <Alert onClick={()=>window.location.reload()} variant={'warning'}>
+        {error === true ? <Alert onClick={() => window.location.reload()} variant={'warning'}>
           Connection Error, Click To Refresh (Use VPN if you are blocked from Trello)
         </Alert> : <div className='customSpin'>
           <Spinner animation="border" role="status" />
@@ -181,18 +186,18 @@ const BoardContainer = ({ serverURL }) => {
 
               {/* Draws the button and input box specific for the lists conditionally */}
               {
-              (list.name === 'To Do') ? (
-              <Form onSubmit={handleSubmit}>
-                <Form.Group className="mt-1">
-                  <Form.Control onChange={handleChange} value={inputValue} type="text" className="mt-1" placeholder="Add A Card" />
-                  <Button disabled={isLoading}
-                    variant="dark" className="mt-1" type="submit">
-                    {isLoading ? 'Updating…' : 'Submit'}
-                  </Button>
-                </Form.Group>
-              </Form>
-              )
-                :(<Button variant="dark" className="mt-1" onClick={()=>deleteListContent(list.id,1)}>Archive All</Button>)
+                (list.name === 'To Do') ? (
+                  <Form onSubmit={handleSubmit}>
+                    <Form.Group className="mt-1">
+                      <Form.Control onChange={handleChange} value={inputValue} type="text" className="mt-1" placeholder="Add A Card" />
+                      <Button disabled={isLoading}
+                        variant="dark" className="mt-1" type="submit">
+                        {isLoading ? 'Updating…' : 'Submit'}
+                      </Button>
+                    </Form.Group>
+                  </Form>
+                )
+                  : (<Button variant="dark" className="mt-1" onClick={() => deleteListContent(list.id, 1)}>Archive All</Button>)
               }
             </Col>
           ))}

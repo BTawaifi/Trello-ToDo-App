@@ -31,23 +31,30 @@ if (cluster.isMaster) {
 else {
 
     client = redis.createClient(REDIS_PORT);
+    client.on('error', function (err) {
+        console.error("In Process " + process.pid + " " + err);
+    });
+
+    client.on('connect', function () {
+        console.log("Process " + process.pid + " connected to redis");
+    });
 
     // Cache middleware
     function cache(req, res, next) {
-      try {
-        const key = req.route.path;
-        client.get(key, (err, value) => {
-          if (err) throw err;
-          if (value !== null) {
-            res.send(JSON.parse(value));
-          } else {
+        try {
+            const key = req.route.path;
+            client.get(key, (err, value) => {
+                if (err) throw err;
+                if (value !== null) {
+                    res.send(JSON.parse(value));
+                } else {
+                    next();
+                }
+            });
+        } catch (err) {
+            console.log(err.errno);
             next();
-          }
-        });
-      } catch (err) {
-        console.log(err.errno);
-        next();
-      }
+        }
     }
 
     //Modify Cors to allow or disallow Cross-origin resource sharing (whitelist the frontend)
