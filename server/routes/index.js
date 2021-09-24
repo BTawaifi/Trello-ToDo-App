@@ -3,16 +3,24 @@
 const express = require('express');
 const router = express.Router();
 const { getAllBoards, getLists, getCards, addCard, moveCard, archiveAll } = require("./functions.js"); //axios functions
-const { cacheMiddleware, cacheBoardContents, cacheNewCard, cacheMoveCard, cacheArchiveAll } = require("../cache"); //redis caching
+const { cacheTest, cacheMiddleware, cacheBoardContents, cacheNewCard, cacheMoveCard, cacheArchiveAll } = require("../cache"); //redis caching
 
 
 router.get('/', async (req, res) => {
     res.send("Server Online")
 })
 
+router.get('/cacheTest', (req, res) => {
+    cacheTest("test", "Testing",(value)=>{
+        console.log(value+" Done")
+        res.send(value+" Done")
+    })
+})
+
 //Gets Lists and their cards within the board, concatinates them into one JSON response
 //cacheMiddleware works if the redis server is online
 router.get('/boardcontents', cacheMiddleware, (req, res) => {
+    console.log('/boardcontents Called')
     getLists()
         .then(async request => {
             let cardsArray = [];
@@ -44,7 +52,7 @@ router.get('/boardcontents', cacheMiddleware, (req, res) => {
             await cacheBoardContents(req.route.path, lists)
             res.json(lists)
         })
-        .catch(err => res.send(err.errno));
+        .catch(err => res.send(err));
 
 })
 
@@ -56,7 +64,7 @@ router.post('/cards/new', async (req, res) => {
             cacheNewCard("/boardcontents", response.data.id, req.body.name, req.body.listid, 0)
             res.json(response.data.id)
         })
-            .catch(err => res.send(err.errno));
+            .catch(err => res.send(err));
     else res.status(400).send({
         status: 400,
         error: 'No Text'
@@ -69,7 +77,7 @@ router.put('/cards::id', async (req, res) => {
         cacheMoveCard("/boardcontents", req.params.id, 0, 1);
         res.json(response.data)
     })
-        .catch(err => res.send(err.errno));
+        .catch(err => res.send(err));
 })
 
 //Archive all cards in a list
@@ -79,7 +87,7 @@ router.post('/cards/archiveList', async (req, res) => {
             cacheArchiveAll("/boardcontents", 1);
             res.json(response.data)
         })
-        .catch(err => res.send(err.errno));
+        .catch(err => res.send(err));
 })
 
 router.get('/lists', async (req, res) => {
@@ -87,7 +95,7 @@ router.get('/lists', async (req, res) => {
         .then(request => {
             res.json(request.data)
         })
-        .catch(err => res.send(err.errno));
+        .catch(err => res.send(err));
 })
 
 //get cards for a specific list
@@ -96,7 +104,7 @@ router.post('/cards', async (req, res) => {
         .then(request => {
             res.json(request.data)
         })
-        .catch(err => res.send(err.errno));
+        .catch(err => res.send(err));
 })
 
 //Gets boards, Finds the wanted board by name, Sends back it's id
@@ -107,7 +115,7 @@ router.get('/boards', function (req, res) {
         const Trello_Board_ID = process.env.Trello_Board_ID || Trello_Boards_Response.find(element => element.name === Trello_Board_Name).id
         res.json(Trello_Board_ID)
     })
-        .catch(err => res.send(err.errno));
+        .catch(err => res.send(err));
 })
 
 

@@ -27,9 +27,9 @@ Trello_Token= {your generated token}
 # Continue by restarting the server and running the client
 ```
 
-## Redis Setup (Cache Server Optional)
+## Redis Standalone Setup (Cache Server Optional)
 
-### For Windows download and install the following
+### For Windows download and install the service
 
 ```bash
 https://github.com/tporadowski/redis/releases
@@ -43,9 +43,9 @@ docker run -d --name redis -p 6379:6379 redis
 # for further documentation visit: https://hub.docker.com/_/redis
 ```
 
-- Redis requires further configuration by providing a custom redis.conf file
-- Docker containers might need linking
-- Tested Combination NPM + Windows Redis, NPM + Docker Redis (Full Docker Solution is still in testing)
+- Redis requires further configuration by providing a redis.conf file
+- Docker containers will need network linking if they aren't on the bridge network
+- set REDIS_HOST env variable for the api server to redis container name if it's not connecting
 
 ## Setup using NPM
 
@@ -60,9 +60,13 @@ npm install
 npm run client-install
 
 # Create a .env file and write the following (or add enviromental variables on the webhost)
+REDIS_HOST: {redis server ip (container name or ip in case of docker usage) }
+REDIS_PORT: {redis server port}
 Trello_Key= {your app key}
 Trello_Token= {your generated token}
 Trello_Board_ID= {your chosen Board id}
+
+-> Start Redis
 
 # Run the client & server with concurrently
 npm run dev
@@ -85,6 +89,8 @@ REACT_APP_Server_URL="http://localhost:5000"
 
 ```bash
 # Edit docker-compose.yml with your own enviromental variables
+REDIS_HOST: {redis container name or ip}
+REDIS_PORT: {redis container port}
 Trello_Key= {your app key}
 Trello_Token= {your generated token}
 Trello_Board_ID= {your chosen Board id}
@@ -103,3 +109,5 @@ docker-compose down
 
 # Server runs locally on http://localhost:5000 and client on http://localhost:3000
 ```
+- If you are facing connection issues on windows set WSL Adapter's IP to DHCP and DNS to Auto
+- If you want to use vpn you need to restart docker after you connect

@@ -1,5 +1,8 @@
 const redis = require('redis');
 const REDIS_PORT = process.env.REDIS_PORT || 6379;
+const REDIS_HOST = process.env.REDIS_HOST || '127.0.0.1' || 'localhost'; 
+//if you are using docker set REDIS_HOST to the name of the redis container 
+//if you are using docker in windows set WSL adapter IP to DHCP
 
 //Redis server is used here to provide in memory Key-Value data store caching
 //We Aim To minimize the number of GET requests done on DB, while keeping the write requests the same
@@ -21,7 +24,7 @@ const REDIS_PORT = process.env.REDIS_PORT || 6379;
     *Time Based Expiry for Primary Dataset resyncs the cache with the DB
 */
 
-const client = redis.createClient(REDIS_PORT);
+const client = redis.createClient(REDIS_PORT, REDIS_HOST);
 client.on('error', function (err) {
     console.error("In Process " + process.pid + " " + err);
 });
@@ -31,7 +34,6 @@ client.on('connect', function () {
 });
 
 // Cache middleware, serves cache in case of hit
-
 exports.cacheMiddleware = (req, res, next) => {
     const key = req.route.path;
     if (client.ready) {
@@ -136,5 +138,23 @@ exports.cacheArchiveAll = (key, listNum) => {
     }
     catch (err) {
         console.log(err)
+    }
+}
+
+exports.cacheTest = (key, testValue,callback) => {
+    try {
+        if (client.ready) {
+            client.SET(key, testValue);
+            client.GET(key, (err, value) => {
+                if (err) throw err
+                if (value) {
+                    callback(value); 
+                    //async functions needs callback, 'return' will stop the function
+                }
+            })
+        }
+    }
+    catch (err) {
+        console.log(err) 
     }
 }

@@ -1,15 +1,40 @@
 version: "3"
+
 services:
   react-app:
     image: react-app
-    stdin_open: true
+    container_name: react-client
     ports: 
       - "3000:3000"
+    networks:
+      - network-cluster
   api-server:
     image: api-server
+    container_name: node-server
     ports:
       - "5000:5000"
+    networks:
+      - network-cluster
     environment: 
+      REDIS_HOST: "redis" #set to redis container_name
+      REDIS_PORT: '6379'
       Trello_Key: ''
       Trello_Token: ''
       Trello_Board_ID: ''
+  redis:
+    image: redis
+    container_name: redis
+    stdin_open: true
+    ports:
+      - "6379:6379"
+    networks:
+      - network-cluster
+    command: ["redis-server", "--bind", "redis", "--port", "6379"]
+    volumes:
+      - redis:/var/lib/redis/data
+      - ./redis.conf:/usr/local/etc/redis/redis.conf #THIS
+volumes:
+  redis:
+networks:
+  network-cluster:
+    driver: bridge
