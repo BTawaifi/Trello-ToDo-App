@@ -24,9 +24,8 @@ const BoardContainer = ({ serverURL }) => {
 
   React.useEffect(() => {
 
-    //refresh the data every set time
+    //refresh the data automatically in set intervals
     const interval = setInterval(() => getBoard(), 2000); //change the refresh rate here
-
 
     //fetch board from backend
     if (!boardLoaded)
@@ -46,14 +45,13 @@ const BoardContainer = ({ serverURL }) => {
   //fetches all the board lists and the cards within them as one JSON
   const getBoard = () => {
     setboardLoaded(true);
-    console.log(`${serverURL}/boardcontents`)
+    console.log(`Data Refreshed`)
     axios
       .get(`${serverURL}/boardcontents`)
       .then((response) => {
         setredraw(true);
         setBoard(response.data);
         setredraw(false);
-
       })
       .catch((err) => {
         //can be modified to change reconnection behavior

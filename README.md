@@ -1,10 +1,10 @@
-# Btawaifi Trello-ToDo-App
+# BTawaifi trello-todo-app
 
 > A Fullstack Application That Allows Custom Communication with Trello
 
 ## Quick Start
 
-### In case you don't have the required enviromental variables
+## Acquire Necessary Enviromental Variables
 
 ```bash
 # Navigate To
@@ -27,23 +27,27 @@ Trello_Token= {your generated token}
 # Continue by restarting the server and running the client
 ```
 
-### Redis Setup (If you want your requests to be cached)
+## Redis Setup (Cache Server Optional)
 
-NOTE: redis require custom configuration beside the basic default config
-
-#### On windows download and install
+### For Windows download and install the following
 
 ```bash
 https://github.com/tporadowski/redis/releases
 ```
 
-#### For Docker run the following
+### For Docker just run the following command
 
 ```bash
 docker run -d --name redis -p 6379:6379 redis
+
+# for further documentation visit: https://hub.docker.com/_/redis
 ```
 
-### Npm Setup
+- Redis requires further configuration by providing a custom redis.conf file
+- Docker containers might need linking
+- Tested Combination NPM + Windows Redis, NPM + Docker Redis (Full Docker Solution is still in testing)
+
+## Setup using NPM
 
 ```bash
 # Change directory to server directory
@@ -77,7 +81,7 @@ REACT_APP_Server_URL="http://localhost:5000"
 
 ```
 
-### Docker Setup
+## Setup using Docker
 
 ```bash
 # Edit docker-compose.yml with your own enviromental variables

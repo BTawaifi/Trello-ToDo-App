@@ -40,6 +40,7 @@ else {
     app.use(compression())
     app.use(express.json())
 
+    //Allows accessing routes from a different module
     app.use('/', routes);
 
 

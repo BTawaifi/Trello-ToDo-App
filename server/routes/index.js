@@ -2,15 +2,16 @@
 
 const express = require('express');
 const router = express.Router();
-const { getAllBoards, getLists, getCards, addCard, moveCard, archiveAll } = require("./functions.js");
-const { getCacheValue, cacheMiddleware, handleBoardContents, handleNewCard, handleMoveCard, handleArchiveAll } = require("../cache");
+const { getAllBoards, getLists, getCards, addCard, moveCard, archiveAll } = require("./functions.js"); //axios functions
+const { cacheMiddleware, cacheBoardContents, cacheNewCard, cacheMoveCard, cacheArchiveAll } = require("../cache"); //redis caching
 
 
 router.get('/', async (req, res) => {
     res.send("Server Online")
 })
 
-//Gets Lists and their cards within the board, concatinates them into one JSON response 
+//Gets Lists and their cards within the board, concatinates them into one JSON response
+//cacheMiddleware works if the redis server is online
 router.get('/boardcontents', cacheMiddleware, (req, res) => {
     getLists()
         .then(async request => {
@@ -40,7 +41,7 @@ router.get('/boardcontents', cacheMiddleware, (req, res) => {
                 concater = []
             }
 
-            await handleBoardContents(req.route.path, lists)
+            await cacheBoardContents(req.route.path, lists)
             res.json(lists)
         })
         .catch(err => res.send(err.errno));
@@ -52,7 +53,7 @@ router.get('/boardcontents', cacheMiddleware, (req, res) => {
 router.post('/cards/new', async (req, res) => {
     if (req.body.name !== '')
         addCard(req.body.listid, req.body.name).then((response) => {
-            handleNewCard("/boardcontents", response.data.id, req.body.name, req.body.listid, 0)
+            cacheNewCard("/boardcontents", response.data.id, req.body.name, req.body.listid, 0)
             res.json(response.data.id)
         })
             .catch(err => res.send(err.errno));
@@ -65,7 +66,7 @@ router.post('/cards/new', async (req, res) => {
 //Move a card from one list to another
 router.put('/cards::id', async (req, res) => {
     moveCard(req.params.id, req.body.idList).then((response) => {
-        handleMoveCard("/boardcontents", req.params.id, 0, 1);
+        cacheMoveCard("/boardcontents", req.params.id, 0, 1);
         res.json(response.data)
     })
         .catch(err => res.send(err.errno));
@@ -75,7 +76,7 @@ router.put('/cards::id', async (req, res) => {
 router.post('/cards/archiveList', async (req, res) => {
     archiveAll(req.body.listid)
         .then(() => {
-            handleArchiveAll("/boardcontents", 1);
+            cacheArchiveAll("/boardcontents", 1);
             res.json(response.data)
         })
         .catch(err => res.send(err.errno));
