@@ -1,12 +1,12 @@
-# Btawaifi Trello-ToDo-App
+# BTawaifi trello-todo-app
 
 > A Fullstack Application That Allows Custom Communication with Trello
 
 ## Quick Start
 
-### In case you don't have the required enviromental variables
+## Acquire Necessary Enviromental Variables
 
-``` bash
+```bash
 # Navigate To
 https://trello.com/app-key
 
@@ -27,9 +27,29 @@ Trello_Token= {your generated token}
 # Continue by restarting the server and running the client
 ```
 
-### Npm Setup
+## Redis Standalone Setup (Cache Server Optional)
 
-``` bash
+### For Windows download and install the service
+
+```bash
+https://github.com/tporadowski/redis/releases
+```
+
+### For Docker just run the following command
+
+```bash
+docker run -d --name redis -p 6379:6379 redis
+
+# for further documentation visit: https://hub.docker.com/_/redis
+```
+
+- Redis requires further configuration by providing a redis.conf file
+- Docker containers will need network linking if they aren't on the bridge network
+- set REDIS_HOST env variable for the api server to redis container name if it's not connecting
+
+## Setup using NPM
+
+```bash
 # Change directory to server directory
 cd server
 
@@ -40,9 +60,13 @@ npm install
 npm run client-install
 
 # Create a .env file and write the following (or add enviromental variables on the webhost)
+REDIS_HOST: {redis server ip (container name or ip in case of docker usage) }
+REDIS_PORT: {redis server port}
 Trello_Key= {your app key}
 Trello_Token= {your generated token}
 Trello_Board_ID= {your chosen Board id}
+
+-> Start Redis
 
 # Run the client & server with concurrently
 npm run dev
@@ -61,11 +85,12 @@ REACT_APP_Server_URL="http://localhost:5000"
 
 ```
 
+## Setup using Docker
 
-### Docker Setup
-
-``` bash
+```bash
 # Edit docker-compose.yml with your own enviromental variables
+REDIS_HOST: {redis container name or ip}
+REDIS_PORT: {redis container port}
 Trello_Key= {your app key}
 Trello_Token= {your generated token}
 Trello_Board_ID= {your chosen Board id}
@@ -84,4 +109,5 @@ docker-compose down
 
 # Server runs locally on http://localhost:5000 and client on http://localhost:3000
 ```
-
+- If you are facing connection issues on windows set WSL Adapter's IP to DHCP and DNS to Auto
+- If you want to use vpn you need to restart docker after you connect
