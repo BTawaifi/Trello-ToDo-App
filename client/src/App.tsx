@@ -6,9 +6,9 @@ import Footer from "./components/Footer";
 function App() {
   return (
     <div className="App">
-      <Header />      
-        <BoardContainer serverURL={process.env.REACT_APP_Server_URL} />
-      <Footer/>
+      <Header />
+      <BoardContainer serverURL={process.env.REACT_APP_Server_URL ?? 'http://localhost:5000'} />
+      <Footer />
     </div>
   );
 }
