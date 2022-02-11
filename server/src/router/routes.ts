@@ -1,8 +1,13 @@
 import express from 'express';
 const router = express.Router();
 import { getAllBoards, getLists, getCards, addCard, moveCard, archiveAll } from "./functions"; //axios functions
-import { cacheTest, cacheMiddleware, cacheBoardContents, cacheNewCard, cacheMoveCard, cacheArchiveAll } from "../cache"; //redis caching
+import { cacheTest, cacheMiddleware, cacheBoardContents, cacheNewCard, cacheMoveCard, cacheArchiveAll, RedisEmitter } from "../cache/redis"; //redis caching
 import { TrelloCard, TrelloList } from '../interfaces/general';
+
+let redisDown =false;
+RedisEmitter.on('redisDown', arg => {
+    redisDown = arg;
+});
 
 router.get('/', async (_req:express.Request, res: express.Response) => {
     res.send("Server Online");
@@ -18,8 +23,7 @@ router.get('/cacheTest', (_req:express.Request, res: express.Response) => {
 //Gets Lists and their cards within the board, concatinates them into one JSON response
 //cacheMiddleware works if the redis server is online
 router.get('/boardcontents', cacheMiddleware, (req:express.Request, res: express.Response) => {
-    //console.log('/boardcontents Called');
-    getLists()
+    getLists() //axios response
         .then(async request => {
             let cardsArray: Array<TrelloCard> = [];
             const lists:Array<TrelloList> = request.data;
@@ -46,11 +50,14 @@ router.get('/boardcontents', cacheMiddleware, (req:express.Request, res: express
                 lists[i].cards = { ...concater };
                 concater = [];
             }
-
-            await cacheBoardContents(req.route.path, lists);
-            res.json(lists);
+                //if (!(<any>req).shouldSkipCache) {
+                    if(!redisDown)
+                    await cacheBoardContents(req.route.path, lists);
+                //}
+                
+            res.send(lists);
         })
-        .catch(err => res.send(err));
+        .catch(err => res.sendStatus(400));
 });
 
 
@@ -58,19 +65,18 @@ router.get('/boardcontents', cacheMiddleware, (req:express.Request, res: express
 router.post('/cards/new', async (req:express.Request, res: express.Response) => {
     if (req.body.name !== '')
         addCard(req.body.listid, req.body.name).then(response => {
+            if(!redisDown)
             cacheNewCard("/boardcontents", response.data.id, req.body.name, req.body.listid, 0);
             res.json(response.data.id);
         })
             .catch(err => res.send(err));
-    else res.status(400).send({
-        status: 400,
-        error: 'No Text'
-    });
+    else res.sendStatus(400);
 });
 
 //Move a card from one list to another
 router.put('/cards::id', async (req:express.Request, res: express.Response) => {
     moveCard(req.params.id, req.body.idList).then(response => {
+        if(!redisDown)
         cacheMoveCard("/boardcontents", req.params.id, 0, 1);
         res.json(response.data);
     })
@@ -81,6 +87,7 @@ router.put('/cards::id', async (req:express.Request, res: express.Response) => {
 router.post('/cards/archiveList', async (req:express.Request, res: express.Response) => {
     archiveAll(req.body.listid)
         .then(response => {
+            if(!redisDown)
             cacheArchiveAll("/boardcontents", 1);
             res.json(response.data);
         })

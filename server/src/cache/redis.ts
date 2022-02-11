@@ -1,8 +1,10 @@
 import Redis from 'ioredis';
 import express from 'express';
+import EventEmitter from 'events';
 const REDIS_PORT = process.env.REDIS_PORT ? +process.env.REDIS_PORT : 6379 || 6379;
 const REDIS_HOST = process.env.REDIS_HOST || '127.0.0.1' || 'localhost';
 const REDIS_PASSWORD = process.env.REDIS_PASSWORD || '';
+export const RedisEmitter = new EventEmitter();
 //if you are using docker set REDIS_HOST to the name of the redis container 
 //if you are using docker in windows set WSL adapter IP to DHCP
 
@@ -26,40 +28,61 @@ const REDIS_PASSWORD = process.env.REDIS_PASSWORD || '';
     *Time Based Expiry for Primary Dataset resyncs the cache with the DB
 */
 
-export const redis_config = {
+const redis_config = {
     port: REDIS_PORT,
     host: REDIS_HOST,
     password: REDIS_PASSWORD,
+    autoResubscribe: false,
+    maxRetriesPerRequest: 0,
+    connectTimeout: 10000,
+    retryStrategy(times: number) {
+        const delay = Math.min(times * 600, 60000);
+        return delay;
+    }
 };
 
 export const redis = new Redis(redis_config);
 
-/* client.on('error', err => {
-    console.error("In Process " + process.pid + " " + err);
-});
-
-client.on('connect', () => {
-    console.log("Process " + process.pid + " connected to redis");
-}); */
+redis
+    .on('connect', () => {
+        redis.flushall();
+        RedisEmitter.emit('redisDown', false);
+        
+        console.log("Process " + process.pid + " connected to redis");
+    })
+    .on('ready', () => {
+        //console.log('Redis ready');
+    })
+    .on('error', (e: any) => {
+        RedisEmitter.emit('redisDown', true);
+        
+        if (e.code === 'ECONNREFUSED') {
+            console.error('Redis Connection Refused ' + (Date().slice(16, 24)));
+        }
+        else {
+            console.error(e);
+        }
+    })
+    .on('close', () => {
+        //console.log('Redis close');
+    })
+    .on('reconnecting', () => {
+        //console.log('Redis reconnecting');
+    })
+    .on('end', () => {
+        //console.log('Redis end');
+    });
 
 // Cache middleware, serves cache in case of hit
 export const cacheMiddleware = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
     const key = req.route.path;
-    try {
-        await redis.get(key, (err, value) => {
-            if (err) {
-                throw err;
-            }
-            if (value !== null) {
-                res.send(JSON.parse(value));
-            } else {
-                next();
-            }
-        });
-    } catch (error) {
-        next();
-    }
 
+    await redis.get(key).then(data => {
+        data ? (res.send(JSON.parse(data))) : next();
+    }).catch(() => {
+        (<any>req).shouldSkipCache = true;
+        return next();
+    });
 };
 
 
@@ -68,13 +91,12 @@ export const cacheMiddleware = async (req: express.Request, res: express.Respons
 
 //Creates The main dataset that other caching operations are utilizing
 export const cacheBoardContents = async (key: Redis.KeyType, value: any) => {
-    redis.setex(key, 60, JSON.stringify(value));
+    redis.setex(key, 60, JSON.stringify(value)).catch(err => console.log(err));
 };
 
 export const cacheNewCard = async (key: Redis.KeyType, cardId: string, name: string, listID: string, chosenList: number) => {
     try { //checks if the cache server is online
-        await redis.get(key, (err, value) => {
-            if (err) throw err;
+        await redis.get(key).then(value => {
             if (value) {
                 //Adds new object to the primary dataset
                 const myBoard = JSON.parse(value);
@@ -87,18 +109,16 @@ export const cacheNewCard = async (key: Redis.KeyType, cardId: string, name: str
 
                 redis.setex(key, 60, JSON.stringify(myBoard)); //rewrite changes on the primary db
             }
-        });
+        }).catch(err => { throw err; });
     }
     catch (err) {
         console.log(err);
     }
-
 };
 
 export const cacheMoveCard = async (key: Redis.KeyType, oldID: string, from: number, to: number) => {
-    try {
-        await redis.get(key, (err, value) => {
-            if (err) throw err;
+    try { //checks if the cache server is online
+        await redis.get(key).then(value => {
             if (value) {
                 //Gets primary dataset
                 const myBoard = JSON.parse(value);
@@ -123,7 +143,7 @@ export const cacheMoveCard = async (key: Redis.KeyType, oldID: string, from: num
                 //Update Primary Dataset
                 redis.setex(key, 60, JSON.stringify(myBoard));
             }
-        });
+        }).catch(err => { throw err; });
     }
     catch (err) {
         console.log(err);
@@ -132,14 +152,13 @@ export const cacheMoveCard = async (key: Redis.KeyType, oldID: string, from: num
 
 export const cacheArchiveAll = async (key: Redis.KeyType, listNum: number) => {
     try {
-        await redis.get(key, (err, value) => {
-            if (err) throw err;
+        await redis.get(key).then(value => {
             if (value) {
                 const myBoard = JSON.parse(value);
                 myBoard[listNum].cards = {};
                 redis.setex(key, 60, JSON.stringify(myBoard));
             }
-        });
+        }).catch(err => { throw err; });
     }
     catch (err) {
         console.log(err);
@@ -149,13 +168,11 @@ export const cacheArchiveAll = async (key: Redis.KeyType, listNum: number) => {
 export const cacheTest = async (key: string, testValue: string, callback: { (value: string): void; (arg0: any): void; }) => {
     try {
         await redis.set(key, testValue);
-        await redis.get(key, (err: any, value: any) => {
-            if (err) throw err;
+        await redis.get(key).then(value => {
             if (value) {
                 callback(value);
-                //async functions needs callback, 'return' will stop the function
             }
-        });
+        }).catch(err => { throw err; });
     }
     catch (err) {
         console.log(err);
