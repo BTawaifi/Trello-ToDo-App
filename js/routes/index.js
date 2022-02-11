@@ -16,7 +16,7 @@ router.get('/cacheTest', (_req, res) => {
         res.send(value + " Done");
     });
 });
-router.get('/boardcontents', cache_1.cacheMiddleware, (req, res) => {
+router.get('/boardcontents', (req, res) => {
     (0, functions_1.getLists)()
         .then(async (request) => {
         let cardsArray = [];
